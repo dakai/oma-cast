@@ -386,7 +386,7 @@ PanelWindow {
       }
     }
 
-    if (Util.editsFilter(event, window.query)) { window.setQuery(Util.editedFilter(event, window.query)); return true }
+    if (Util.editsFilter(event, window.query)) { var edited = Util.editedFilter(event, window.query); window.setQuery(edited); keyCatcher.text = edited; return true }
     if (key === Qt.Key_Backspace && !window.query && !window.atRoot) { window.pop(); return true }
     if (window.isTyping(event)) { window.setQuery(window.query + event.text); return true }
     return false
@@ -426,10 +426,26 @@ PanelWindow {
 
     MouseArea { anchors.fill: parent; onClicked: { window.actionPanelOpen = false; keyCatcher.forceActiveFocus() } }
 
-    Item {
+    TextInput {
       id: keyCatcher
       anchors.fill: parent
       focus: true
+      color: "transparent"
+      selectionColor: "transparent"
+      cursorVisible: false
+      font.pixelSize: 1
+      activeFocusOnPress: false
+      selectByMouse: false
+      // text owned by TextInput (IME composition); synced via onQueryChanged
+      onTextChanged: {
+        if (window.query !== text) window.setQuery(text)
+      }
+      Connections {
+        target: window
+        function onQueryChanged() {
+          if (keyCatcher.text !== window.query) keyCatcher.text = window.query
+        }
+      }
       Keys.priority: Keys.BeforeItem
       Keys.onPressed: function(event) { if (window.handleKey(event)) event.accepted = true }
     }
